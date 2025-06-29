@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ArrowLeft, LogOut, Loader2, Lightbulb, BookOpen, RefreshCw, AlertCircle, CheckCircle } from "lucide-react"
 
 interface User {
@@ -21,30 +21,30 @@ interface User {
   email: string
 }
 
-interface OrientationFormData {
+interface FormData {
   age: number
   sexe: string
   localite: string
   langues: string[]
   niveauEtude: string
   filiere: string
-  matieresSci: string
-  matieresLitt: string
-  situationActuelle: string
-  matieresPref: string[]
-  activitesPref: string[]
-  travailPref: string
-  aimerFaire: string[]
+  matieresScientifiques: string
+  matieresLitteraires: string
+  statut: string
+  matieresPreferees: string[]
+  activitesPreferees: string[]
+  travailPreference: string
+  aimes: string[]
   typeTravail: string
   metierEnTete: string
-  metierPrecis: string
-  motivation: string
+  metier: string
+  objectif: string
   entrepreneuriat: string
   smartphone: string
   internet: string
   activiteParents: string
   apprentissage: string[]
-  competenceExist: string
+  competenceExistante: string
 }
 
 export default function OrientationPage() {
@@ -54,36 +54,33 @@ export default function OrientationPage() {
   const [showResult, setShowResult] = useState(false)
   const [recommendation, setRecommendation] = useState("")
   const [error, setError] = useState("")
-  const [validationErrors, setValidationErrors] = useState<string[]>([])
 
-  // État du formulaire avec valeurs par défaut
-  const [formData, setFormData] = useState<OrientationFormData>({
-    age: 0,
+  const [formData, setFormData] = useState<FormData>({
+    age: 12,
     sexe: "",
-    localite: "",
+    localite: "Lomé",
     langues: [],
-    niveauEtude: "",
-    filiere: "",
-    matieresSci: "",
-    matieresLitt: "",
-    situationActuelle: "",
-    matieresPref: [],
-    activitesPref: [],
-    travailPref: "",
-    aimerFaire: [],
-    typeTravail: "",
-    metierEnTete: "",
-    metierPrecis: "",
-    motivation: "",
-    entrepreneuriat: "",
-    smartphone: "",
-    internet: "",
-    activiteParents: "",
+    niveauEtude: "Collège (3e)",
+    filiere: "Série D",
+    matieresScientifiques: "Faible",
+    matieresLitteraires: "Faible",
+    statut: "En cours",
+    matieresPreferees: [],
+    activitesPreferees: [],
+    travailPreference: "Seul",
+    aimes: [],
+    typeTravail: "Fixe",
+    metierEnTete: "Non",
+    metier: "",
+    objectif: "Aider les autres",
+    entrepreneuriat: "Non",
+    smartphone: "Oui",
+    internet: "Fréquent",
+    activiteParents: "Agriculture",
     apprentissage: [],
-    competenceExist: "",
+    competenceExistante: "",
   })
 
-  // Charger les données utilisateur
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -102,17 +99,14 @@ export default function OrientationPage() {
         setIsLoading(false)
       }
     }
-
     loadUserData()
   }, [])
 
-  // Générer l'URL de l'avatar
   const getAvatarUrl = (username: string) => {
     const seed = username || "default"
     return `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(seed)}&backgroundColor=60A5FA&size=40`
   }
 
-  // Gérer la déconnexion
   const handleLogout = () => {
     localStorage.removeItem("access_token")
     localStorage.removeItem("refresh_token")
@@ -120,20 +114,14 @@ export default function OrientationPage() {
     window.location.href = "/"
   }
 
-  // Gérer les changements de champs simples
-  const handleInputChange = (field: keyof OrientationFormData, value: any) => {
+  const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }))
-    // Effacer les erreurs de validation quand l'utilisateur modifie un champ
-    if (validationErrors.length > 0) {
-      setValidationErrors([])
-    }
   }
 
-  // Gérer les cases à cocher multiples
-  const handleCheckboxChange = (field: keyof OrientationFormData, value: string, checked: boolean) => {
+  const handleCheckboxChange = (field: keyof FormData, value: string, checked: boolean) => {
     setFormData((prev) => {
       const currentArray = prev[field] as string[]
       let newArray: string[]
@@ -149,210 +137,137 @@ export default function OrientationPage() {
         [field]: newArray,
       }
     })
-
-    // Effacer les erreurs de validation
-    if (validationErrors.length > 0) {
-      setValidationErrors([])
-    }
   }
 
-  // Validation complète du formulaire
-  const validateForm = (): string[] => {
-    const errors: string[] = []
+  const formatRecommendation = (text: string): string => {
+    if (!text) return ""
 
-    // Validation de l'âge
-    if (!formData.age || formData.age < 12 || formData.age > 25) {
-      errors.push("L'âge doit être entre 12 et 25 ans")
+    // Nettoyer le texte
+    let formatted = text.trim()
+
+    // Remplacer les marqueurs de formatage par du HTML
+    formatted = formatted
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Gras
+      .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italique
+      .replace(/###\s*(.*?)(?=\n|$)/g, '<h3 class="text-lg font-semibold text-[#60A5FA] mt-4 mb-2">$1</h3>') // Titres H3
+      .replace(/##\s*(.*?)(?=\n|$)/g, '<h2 class="text-xl font-bold text-[#60A5FA] mt-6 mb-3">$1</h2>') // Titres H2
+      .replace(/#\s*(.*?)(?=\n|$)/g, '<h1 class="text-2xl font-bold text-[#60A5FA] mt-6 mb-4">$1</h1>') // Titres H1
+      .replace(/^\s*[-•]\s*(.*?)(?=\n|$)/gm, '<li class="ml-4 mb-1">• $1</li>') // Listes à puces
+      .replace(/^\s*\d+\.\s*(.*?)(?=\n|$)/gm, '<li class="ml-4 mb-1">$1</li>') // Listes numérotées
+      .replace(/\n\s*\n/g, '</p><p class="mb-3">') // Paragraphes
+
+    // Envelopper dans des paragraphes si pas déjà fait
+    if (!formatted.includes("<p>") && !formatted.includes("<h")) {
+      formatted = `<p class="mb-3">${formatted}</p>`
     }
 
-    // Validation des champs obligatoires
-    if (!formData.localite) errors.push("La localité/région est obligatoire")
-    if (formData.langues.length === 0) errors.push("Au moins une langue parlée est obligatoire")
-    if (!formData.niveauEtude) errors.push("Le niveau d'étude actuel est obligatoire")
-    if (!formData.matieresSci) errors.push("Le niveau en matières scientifiques est obligatoire")
-    if (!formData.matieresLitt) errors.push("Le niveau en matières littéraires est obligatoire")
-    if (!formData.situationActuelle) errors.push("Votre situation actuelle est obligatoire")
-    if (formData.matieresPref.length === 0) errors.push("Au moins une matière préférée est obligatoire")
-    if (formData.activitesPref.length === 0) errors.push("Au moins une activité préférée est obligatoire")
-    if (!formData.travailPref) errors.push("Votre préférence de travail est obligatoire")
-    if (formData.aimerFaire.length === 0) errors.push("Au moins une chose que vous aimez faire est obligatoire")
-    if (!formData.typeTravail) errors.push("Le type de travail qui vous attire est obligatoire")
-    if (!formData.metierEnTete) errors.push("Veuillez indiquer si vous avez un métier en tête")
-    if (!formData.motivation) errors.push("Votre motivation principale est obligatoire")
-    if (!formData.entrepreneuriat) errors.push("Votre intérêt pour l'entrepreneuriat est obligatoire")
-    if (!formData.smartphone) errors.push("Votre accès à un smartphone est obligatoire")
-    if (!formData.internet) errors.push("Votre accès internet est obligatoire")
-    if (!formData.activiteParents) errors.push("L'activité des parents est obligatoire")
-    if (formData.apprentissage.length === 0) errors.push("Au moins un style d'apprentissage est obligatoire")
+    // Envelopper les listes
+    formatted = formatted.replace(/(<li.*?<\/li>\s*)+/g, '<ul class="mb-4">$&</ul>')
 
-    // Validation conditionnelle du métier
-    if (formData.metierEnTete === "Oui" && !formData.metierPrecis.trim()) {
-      errors.push("Veuillez préciser le métier que vous avez en tête")
-    }
-
-    return errors
+    return formatted
   }
 
-  // Transformer les données du formulaire au format attendu par l'API
-  const transformFormDataForAPI = (data: OrientationFormData) => {
-    return {
-      Âge: data.age,
-      Sexe: data.sexe,
-      Localité: data.localite,
-      "Langue parlée": data.langues,
-      "Niveau d'étude actuel": data.niveauEtude,
-      "Filière suivie": data.filiere,
-      "Matières scientifiques": data.matieresSci,
-      "Matières littéraires": data.matieresLitt,
-      "Tu es actuellement": data.situationActuelle,
-      "Matière(s) préférée(s)": data.matieresPref,
-      "Activité(s) préférée(s)": data.activitesPref,
-      "Préfères-tu travailler": data.travailPref,
-      "Tu aimes": data.aimerFaire,
-      "Type de travail qui t'attire": data.typeTravail,
-      "As-tu un métier en tête ?": data.metierEnTete,
-      ...(data.metierEnTete === "Oui" && { Métier: data.metierPrecis }),
-      "Tu veux": data.motivation,
-      "Es-tu intéressé(e) par l'entrepreneuriat ?": data.entrepreneuriat,
-      "Accès à un smartphone": data.smartphone,
-      "Accès internet régulier ?": data.internet,
-      "Activité des parents": data.activiteParents,
-      "Tu apprends mieux en": data.apprentissage,
-      "As-tu déjà une compétence ?": data.competenceExist,
-    }
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError("")
+    setRecommendation("")
 
-  // Appeler l'API d'orientation
-  const callOrientationAPI = async (data: OrientationFormData): Promise<string> => {
     try {
-      console.log("Envoi des données à l'API:", data)
+      console.log("📤 Envoi des données à l'API Gradio...")
 
-      const apiData = transformFormDataForAPI(data)
-      console.log("Données transformées pour l'API:", apiData)
-
-      const response = await fetch("/api/orientation/mistral", {
+      const response = await fetch("http://localhost:7860/api/orientation", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(apiData),
+        body: JSON.stringify({
+          data: [
+            formData.age,
+            formData.sexe,
+            formData.localite,
+            formData.langues,
+            formData.niveauEtude,
+            formData.filiere,
+            formData.matieresScientifiques,
+            formData.matieresLitteraires,
+            formData.statut,
+            formData.matieresPreferees,
+            formData.activitesPreferees,
+            formData.travailPreference,
+            formData.aimes,
+            formData.typeTravail,
+            formData.metierEnTete,
+            formData.metier,
+            formData.objectif,
+            formData.entrepreneuriat,
+            formData.smartphone,
+            formData.internet,
+            formData.activiteParents,
+            formData.apprentissage,
+            formData.competenceExistante,
+          ],
+        }),
       })
 
-      console.log("Statut de la réponse:", response.status)
+      console.log("📡 Statut de la réponse:", response.status)
 
-      const contentType = response.headers.get("content-type")
-      console.log("Type de contenu:", contentType)
+      if (response.ok) {
+        const result = await response.json()
+        console.log("✅ Résultat reçu:", result)
 
-      if (!response.ok) {
-        let errorMessage = `Erreur HTTP: ${response.status}`
-        try {
-          if (contentType?.includes("application/json")) {
-            const errorData = await response.json()
-            errorMessage = errorData.error || errorMessage
-          } else {
-            const errorText = await response.text()
-            errorMessage = errorText || errorMessage
-          }
-        } catch (e) {
-          console.error("Erreur lors de la lecture de l'erreur:", e)
-        }
-        throw new Error(errorMessage)
-      }
-
-      if (!contentType?.includes("application/json")) {
-        const responseText = await response.text()
-        console.error("Réponse non-JSON reçue:", responseText)
-        throw new Error("La réponse du serveur n'est pas au format JSON")
-      }
-
-      const result = await response.json()
-      console.log("Résultat reçu:", result)
-
-      if (!result.success) {
-        throw new Error(result.error || "Erreur inconnue du service AI")
-      }
-
-      return result.recommendation || "Aucune recommandation générée"
-    } catch (error: any) {
-      console.error("Erreur détaillée appel API:", error)
-
-      if (error.name === "TypeError" && error.message.includes("fetch")) {
-        throw new Error("Problème de connexion au serveur. Vérifiez votre connexion internet.")
-      } else if (error.message.includes("JSON")) {
-        throw new Error("Erreur de format de données. Veuillez réessayer.")
+        const rawRecommendation = result.data?.[0] || "Aucune recommandation générée"
+        setRecommendation(rawRecommendation)
+        setShowResult(true)
       } else {
-        throw error
+        throw new Error(`Erreur HTTP: ${response.status}`)
       }
-    }
-  }
-
-  // Soumettre le formulaire
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setValidationErrors([])
-
-    // Validation
-    const errors = validateForm()
-    if (errors.length > 0) {
-      setValidationErrors(errors)
-      setError("Veuillez corriger les erreurs ci-dessous avant de continuer.")
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      console.log("Données du formulaire validées:", formData)
-
-      const recommendation = await callOrientationAPI(formData)
-
-      setRecommendation(recommendation)
-      setShowResult(true)
     } catch (error: any) {
-      console.error("Erreur lors de l'appel API:", error)
-      setError(
-        error.message || "Une erreur s'est produite lors de la génération de votre recommandation. Veuillez réessayer.",
-      )
+      console.error("❌ Erreur lors de l'appel API:", error)
+
+      if (error.message.includes("fetch")) {
+        setError(
+          "Impossible de se connecter au service d'orientation. Vérifiez que le serveur Gradio est démarré sur le port 7860.",
+        )
+      } else {
+        setError("Une erreur s'est produite lors de la génération de votre recommandation. Veuillez réessayer.")
+      }
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
-      age: 0,
+      age: 12,
       sexe: "",
-      localite: "",
+      localite: "Lomé",
       langues: [],
-      niveauEtude: "",
-      filiere: "",
-      matieresSci: "",
-      matieresLitt: "",
-      situationActuelle: "",
-      matieresPref: [],
-      activitesPref: [],
-      travailPref: "",
-      aimerFaire: [],
-      typeTravail: "",
-      metierEnTete: "",
-      metierPrecis: "",
-      motivation: "",
-      entrepreneuriat: "",
-      smartphone: "",
-      internet: "",
-      activiteParents: "",
+      niveauEtude: "Collège (3e)",
+      filiere: "Série D",
+      matieresScientifiques: "Faible",
+      matieresLitteraires: "Faible",
+      statut: "En cours",
+      matieresPreferees: [],
+      activitesPreferees: [],
+      travailPreference: "Seul",
+      aimes: [],
+      typeTravail: "Fixe",
+      metierEnTete: "Non",
+      metier: "",
+      objectif: "Aider les autres",
+      entrepreneuriat: "Non",
+      smartphone: "Oui",
+      internet: "Fréquent",
+      activiteParents: "Agriculture",
       apprentissage: [],
-      competenceExist: "",
+      competenceExistante: "",
     })
     setShowResult(false)
     setRecommendation("")
     setError("")
-    setValidationErrors([])
   }
 
-  // Animations
   const pageVariants = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -364,21 +279,13 @@ export default function OrientationPage() {
     animate: { opacity: 1, y: 0 },
   }
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-[#1E3A8A] flex items-center justify-center">
         <div className="text-[#DBEAFE] text-xl font-inter flex items-center">
           <Loader2 className="w-6 h-6 mr-2 animate-spin" />
           Chargement...
         </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-[#1E3A8A] flex items-center justify-center">
-        <div className="text-[#DBEAFE] text-xl font-inter">Redirection...</div>
       </div>
     )
   }
@@ -400,12 +307,10 @@ export default function OrientationPage() {
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   <span className="text-sm font-medium">Retour</span>
                 </Link>
-
                 <Link href="/" className="flex items-center">
                   <h1 className="text-2xl font-bold text-[#60A5FA] hover:text-[#DBEAFE] transition-colors">YVA</h1>
                 </Link>
               </div>
-
               <div className="flex items-center space-x-4">
                 <div className="hidden sm:flex items-center space-x-3">
                   <span className="text-[#DBEAFE] font-medium">{user.name || user.username}</span>
@@ -415,7 +320,6 @@ export default function OrientationPage() {
                     className="w-10 h-10 rounded-full border-2 border-[#60A5FA]"
                   />
                 </div>
-
                 <Button
                   onClick={handleLogout}
                   className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white border-0 transition-colors"
@@ -444,7 +348,7 @@ export default function OrientationPage() {
                 Trouvez votre voie avec <span className="text-[#60A5FA]">YVA</span>
               </h1>
               <p className="text-xl text-[#DBEAFE] max-w-2xl mx-auto">
-                Remplissez ce formulaire pour découvrir les filières et métiers adaptés à vos intérêts et compétences.
+                Remplissez ce formulaire pour une recommandation personnalisée adaptée aux réalités togolaises.
               </p>
             </div>
 
@@ -460,30 +364,6 @@ export default function OrientationPage() {
                   <div className="text-red-200">
                     <p className="font-medium mb-1">Erreur</p>
                     <p className="text-sm">{error}</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Erreurs de validation */}
-            {validationErrors.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6 p-4 bg-yellow-900/20 border border-yellow-700 rounded-lg"
-              >
-                <div className="flex items-start">
-                  <AlertCircle className="w-5 h-5 text-yellow-400 mr-3 flex-shrink-0 mt-0.5" />
-                  <div className="text-yellow-200">
-                    <p className="font-medium mb-2">Champs manquants ou incorrects :</p>
-                    <ul className="text-sm space-y-1">
-                      {validationErrors.map((error, index) => (
-                        <li key={index} className="flex items-center">
-                          <span className="w-1 h-1 bg-yellow-400 rounded-full mr-2"></span>
-                          {error}
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </div>
               </motion.div>
@@ -514,27 +394,25 @@ export default function OrientationPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <Label htmlFor="age" className="text-[#DBEAFE] font-medium">
-                            Âge * <span className="text-sm text-slate-400">(12-25 ans)</span>
+                            Âge *
                           </Label>
                           <Input
                             id="age"
                             type="number"
                             min="12"
                             max="25"
-                            value={formData.age || ""}
-                            onChange={(e) => handleInputChange("age", Number.parseInt(e.target.value) || 0)}
+                            value={formData.age}
+                            onChange={(e) => handleInputChange("age", Number.parseInt(e.target.value) || 12)}
                             className="bg-[#1E3A8A] border-slate-600 text-[#DBEAFE] focus:border-[#60A5FA] mt-1"
-                            placeholder="Votre âge"
+                            required
                           />
                         </div>
 
                         <div>
-                          <Label className="text-[#DBEAFE] font-medium">
-                            Sexe <span className="text-sm text-slate-400">(facultatif)</span>
-                          </Label>
+                          <Label className="text-[#DBEAFE] font-medium">Sexe (facultatif)</Label>
                           <Select value={formData.sexe} onValueChange={(value) => handleInputChange("sexe", value)}>
                             <SelectTrigger className="bg-[#1E3A8A] border-slate-600 text-[#DBEAFE] mt-1">
-                              <SelectValue placeholder="Sélectionnez" />
+                              <SelectValue placeholder="Sélectionner" />
                             </SelectTrigger>
                             <SelectContent className="bg-[#172554] border-slate-600">
                               <SelectItem value="Homme" className="text-[#DBEAFE]">
@@ -559,11 +437,17 @@ export default function OrientationPage() {
                             onValueChange={(value) => handleInputChange("localite", value)}
                           >
                             <SelectTrigger className="bg-[#1E3A8A] border-slate-600 text-[#DBEAFE] mt-1">
-                              <SelectValue placeholder="Sélectionnez votre région" />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-[#172554] border-slate-600">
                               <SelectItem value="Lomé" className="text-[#DBEAFE]">
                                 Lomé
+                              </SelectItem>
+                              <SelectItem value="Kara" className="text-[#DBEAFE]">
+                                Kara
+                              </SelectItem>
+                              <SelectItem value="Savanes" className="text-[#DBEAFE]">
+                                Savanes
                               </SelectItem>
                               <SelectItem value="Maritime" className="text-[#DBEAFE]">
                                 Maritime
@@ -574,18 +458,12 @@ export default function OrientationPage() {
                               <SelectItem value="Centrale" className="text-[#DBEAFE]">
                                 Centrale
                               </SelectItem>
-                              <SelectItem value="Kara" className="text-[#DBEAFE]">
-                                Kara
-                              </SelectItem>
-                              <SelectItem value="Savanes" className="text-[#DBEAFE]">
-                                Savanes
-                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
                         <div>
-                          <Label className="text-[#DBEAFE] font-medium">Langues parlées *</Label>
+                          <Label className="text-[#DBEAFE] font-medium">Langue(s) parlée(s) *</Label>
                           <div className="grid grid-cols-2 gap-2 mt-2">
                             {["Français", "Ewe", "Kabyè", "Mina", "Autre"].map((langue) => (
                               <div key={langue} className="flex items-center space-x-2">
@@ -621,7 +499,7 @@ export default function OrientationPage() {
                             onValueChange={(value) => handleInputChange("niveauEtude", value)}
                           >
                             <SelectTrigger className="bg-[#1E3A8A] border-slate-600 text-[#DBEAFE] mt-1">
-                              <SelectValue placeholder="Votre niveau" />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-[#172554] border-slate-600">
                               <SelectItem value="Collège (3e)" className="text-[#DBEAFE]">
@@ -650,7 +528,7 @@ export default function OrientationPage() {
                             onValueChange={(value) => handleInputChange("filiere", value)}
                           >
                             <SelectTrigger className="bg-[#1E3A8A] border-slate-600 text-[#DBEAFE] mt-1">
-                              <SelectValue placeholder="Votre filière" />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-[#172554] border-slate-600">
                               <SelectItem value="Série D" className="text-[#DBEAFE]">
@@ -677,8 +555,8 @@ export default function OrientationPage() {
                         <div>
                           <Label className="text-[#DBEAFE] font-medium">Matières scientifiques *</Label>
                           <RadioGroup
-                            value={formData.matieresSci}
-                            onValueChange={(value) => handleInputChange("matieresSci", value)}
+                            value={formData.matieresScientifiques}
+                            onValueChange={(value) => handleInputChange("matieresScientifiques", value)}
                             className="mt-2"
                           >
                             {["Faible", "Moyen", "Élevé"].map((niveau) => (
@@ -699,8 +577,8 @@ export default function OrientationPage() {
                         <div>
                           <Label className="text-[#DBEAFE] font-medium">Matières littéraires *</Label>
                           <RadioGroup
-                            value={formData.matieresLitt}
-                            onValueChange={(value) => handleInputChange("matieresLitt", value)}
+                            value={formData.matieresLitteraires}
+                            onValueChange={(value) => handleInputChange("matieresLitteraires", value)}
                             className="mt-2"
                           >
                             {["Faible", "Moyen", "Élevé"].map((niveau) => (
@@ -722,8 +600,8 @@ export default function OrientationPage() {
                       <div>
                         <Label className="text-[#DBEAFE] font-medium">Tu es actuellement *</Label>
                         <RadioGroup
-                          value={formData.situationActuelle}
-                          onValueChange={(value) => handleInputChange("situationActuelle", value)}
+                          value={formData.statut}
+                          onValueChange={(value) => handleInputChange("statut", value)}
                           className="mt-2 flex flex-wrap gap-6"
                         >
                           {["En cours", "En pause", "Déscolarisé"].map((situation) => (
@@ -742,7 +620,7 @@ export default function OrientationPage() {
                       </div>
                     </div>
 
-                    {/* Section 3: Préférences et intérêts */}
+                    {/* Section 3: Préférences */}
                     <div className="space-y-6">
                       <h3 className="text-lg font-semibold text-[#60A5FA] border-b border-slate-600 pb-2">
                         Préférences et intérêts
@@ -756,9 +634,9 @@ export default function OrientationPage() {
                               <div key={matiere} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={`matiere-${matiere}`}
-                                  checked={formData.matieresPref.includes(matiere)}
+                                  checked={formData.matieresPreferees.includes(matiere)}
                                   onCheckedChange={(checked) =>
-                                    handleCheckboxChange("matieresPref", matiere, checked as boolean)
+                                    handleCheckboxChange("matieresPreferees", matiere, checked as boolean)
                                   }
                                   className="border-slate-600 data-[state=checked]:bg-[#60A5FA]"
                                 />
@@ -778,9 +656,9 @@ export default function OrientationPage() {
                             <div key={activite} className="flex items-center space-x-2">
                               <Checkbox
                                 id={`activite-${activite}`}
-                                checked={formData.activitesPref.includes(activite)}
+                                checked={formData.activitesPreferees.includes(activite)}
                                 onCheckedChange={(checked) =>
-                                  handleCheckboxChange("activitesPref", activite, checked as boolean)
+                                  handleCheckboxChange("activitesPreferees", activite, checked as boolean)
                                 }
                                 className="border-slate-600 data-[state=checked]:bg-[#60A5FA]"
                               />
@@ -799,10 +677,8 @@ export default function OrientationPage() {
                             <div key={action} className="flex items-center space-x-2">
                               <Checkbox
                                 id={`aimer-${action}`}
-                                checked={formData.aimerFaire.includes(action)}
-                                onCheckedChange={(checked) =>
-                                  handleCheckboxChange("aimerFaire", action, checked as boolean)
-                                }
+                                checked={formData.aimes.includes(action)}
+                                onCheckedChange={(checked) => handleCheckboxChange("aimes", action, checked as boolean)}
                                 className="border-slate-600 data-[state=checked]:bg-[#60A5FA]"
                               />
                               <Label htmlFor={`aimer-${action}`} className="text-[#DBEAFE] text-sm">
@@ -817,8 +693,8 @@ export default function OrientationPage() {
                         <div>
                           <Label className="text-[#DBEAFE] font-medium">Préfères-tu travailler *</Label>
                           <RadioGroup
-                            value={formData.travailPref}
-                            onValueChange={(value) => handleInputChange("travailPref", value)}
+                            value={formData.travailPreference}
+                            onValueChange={(value) => handleInputChange("travailPreference", value)}
                             className="mt-2"
                           >
                             {["Seul", "En équipe", "Peu importe"].map((pref) => (
@@ -860,7 +736,7 @@ export default function OrientationPage() {
                       </div>
                     </div>
 
-                    {/* Section 4: Aspirations professionnelles */}
+                    {/* Section 4: Aspirations */}
                     <div className="space-y-6">
                       <h3 className="text-lg font-semibold text-[#60A5FA] border-b border-slate-600 pb-2">
                         Aspirations professionnelles
@@ -889,13 +765,13 @@ export default function OrientationPage() {
 
                         {formData.metierEnTete === "Oui" && (
                           <div className="mt-4">
-                            <Label htmlFor="metier-precis" className="text-[#DBEAFE] font-medium">
-                              Quel métier ? *
+                            <Label htmlFor="metier" className="text-[#DBEAFE] font-medium">
+                              Si oui, quel métier ? *
                             </Label>
                             <Input
-                              id="metier-precis"
-                              value={formData.metierPrecis}
-                              onChange={(e) => handleInputChange("metierPrecis", e.target.value)}
+                              id="metier"
+                              value={formData.metier}
+                              onChange={(e) => handleInputChange("metier", e.target.value)}
                               className="bg-[#1E3A8A] border-slate-600 text-[#DBEAFE] focus:border-[#60A5FA] mt-1"
                               placeholder="Ex: Médecin, Ingénieur, Professeur..."
                             />
@@ -906,8 +782,8 @@ export default function OrientationPage() {
                       <div>
                         <Label className="text-[#DBEAFE] font-medium">Tu veux *</Label>
                         <RadioGroup
-                          value={formData.motivation}
-                          onValueChange={(value) => handleInputChange("motivation", value)}
+                          value={formData.objectif}
+                          onValueChange={(value) => handleInputChange("objectif", value)}
                           className="mt-2 space-y-2"
                         >
                           {[
@@ -915,15 +791,15 @@ export default function OrientationPage() {
                             "Gagner de l'argent",
                             "Être indépendant",
                             "Être utile à ma communauté",
-                          ].map((motiv) => (
-                            <div key={motiv} className="flex items-center space-x-2">
+                          ].map((obj) => (
+                            <div key={obj} className="flex items-center space-x-2">
                               <RadioGroupItem
-                                value={motiv}
-                                id={`motiv-${motiv}`}
+                                value={obj}
+                                id={`obj-${obj}`}
                                 className="border-slate-600 text-[#60A5FA]"
                               />
-                              <Label htmlFor={`motiv-${motiv}`} className="text-[#DBEAFE]">
-                                {motiv}
+                              <Label htmlFor={`obj-${obj}`} className="text-[#DBEAFE]">
+                                {obj}
                               </Label>
                             </div>
                           ))}
@@ -955,7 +831,7 @@ export default function OrientationPage() {
                       </div>
                     </div>
 
-                    {/* Section 5: Contexte et ressources */}
+                    {/* Section 5: Contexte */}
                     <div className="space-y-6">
                       <h3 className="text-lg font-semibold text-[#60A5FA] border-b border-slate-600 pb-2">
                         Contexte et ressources
@@ -1014,7 +890,7 @@ export default function OrientationPage() {
                           onValueChange={(value) => handleInputChange("activiteParents", value)}
                         >
                           <SelectTrigger className="bg-[#1E3A8A] border-slate-600 text-[#DBEAFE] mt-1">
-                            <SelectValue placeholder="Activité principale" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-[#172554] border-slate-600">
                             <SelectItem value="Agriculture" className="text-[#DBEAFE]">
@@ -1059,12 +935,12 @@ export default function OrientationPage() {
 
                       <div>
                         <Label htmlFor="competence" className="text-[#DBEAFE] font-medium">
-                          As-tu déjà une compétence ? <span className="text-sm text-slate-400">(facultatif)</span>
+                          As-tu déjà une compétence ? (facultatif)
                         </Label>
                         <Textarea
                           id="competence"
-                          value={formData.competenceExist}
-                          onChange={(e) => handleInputChange("competenceExist", e.target.value)}
+                          value={formData.competenceExistante}
+                          onChange={(e) => handleInputChange("competenceExistante", e.target.value)}
                           className="bg-[#1E3A8A] border-slate-600 text-[#DBEAFE] focus:border-[#60A5FA] mt-1"
                           placeholder="Ex: Programmation Python, Couture, Mécanique, Photographie..."
                           rows={3}
@@ -1102,18 +978,22 @@ export default function OrientationPage() {
 
         {/* Dialogue de résultat */}
         <Dialog open={showResult} onOpenChange={setShowResult}>
-          <DialogContent className="bg-[#172554] border-slate-700 max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="bg-[#172554] border-slate-700 max-w-4xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-[#DBEAFE] text-2xl flex items-center">
                 <CheckCircle className="w-7 h-7 mr-3 text-green-400" />
                 Votre recommandation personnalisée
               </DialogTitle>
-              <DialogDescription className="text-[#DBEAFE] mt-4 whitespace-pre-line leading-relaxed text-base">
-                {recommendation}
-              </DialogDescription>
             </DialogHeader>
 
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+            <div className="mt-6">
+              <div
+                className="text-[#DBEAFE] leading-relaxed prose prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: formatRecommendation(recommendation) }}
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-slate-600">
               <Button
                 onClick={() => (window.location.href = "/dashboard")}
                 className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white flex-1 py-3"
