@@ -4,20 +4,19 @@ from mistralai import Mistral
 import os
 import time
 from dotenv import load_dotenv
+
 load_dotenv()
 
-
-# Charger la clé API depuis une variable d'environnement
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 
 app = Flask(__name__)
-CORS(app)  # Autorise les appels depuis Next.js
+CORS(app)
 
-# Fonction de génération de recommandation
+
 def generate_recommendation(age, sexe, localite, langues, niveau_etude, filiere, matieres_scientifiques, matieres_litteraires,
-                           statut, matieres_preferees, activites_preferees, travail_preference, aimes, type_travail,
-                           metier_en_tete, metier, objectif, entrepreneuriat, smartphone, internet, activite_parents,
-                           apprentissage, competence_existante):
+                             statut, matieres_preferees, activites_preferees, travail_preference, aimes, type_travail,
+                             metier_en_tete, metier, objectif, entrepreneuriat, smartphone, internet, activite_parents,
+                             apprentissage, competence_existante):
     try:
         user_data = {
             "Âge": age,
@@ -45,65 +44,59 @@ def generate_recommendation(age, sexe, localite, langues, niveau_etude, filiere,
             "As-tu déjà une compétence ?": competence_existante or "Aucune"
         }
 
-prompt = f"""
-Tu es YVA, un assistant virtuel pour les jeunes Togolais de 12 à 25 ans. Ta mission est de leur proposer une orientation scolaire ou professionnelle **ultra-contextualisée au Togo uniquement**.
+        prompt = f"""
+Tu es YVA, un assistant virtuel pour les jeunes Togolais de 12 à 25 ans. Ta mission est de leur proposer une orientation scolaire ou professionnelle ultra-contextualisée au Togo uniquement.
 
-🎯 Consignes claires :
-- Réponds **en français**, de manière **structurée, bien lisible**.
-- Utilise **uniquement** des **filières, métiers, institutions, formations, contextes et ressources disponibles au Togo**.
-- Propose **3 mini-formations ou actions concrètes locales** (ex: ANPE Togo, Institut National, artisanat local, appui communal, dispositifs togolais...).
-- Le ton doit être **bienveillant, accessible, motivant et adapté aux réalités locales** (accès Internet limité, environnement rural, etc.).
-- Ne propose **aucun service étranger, ni école internationale, ni plateforme non disponible au Togo.**
-- Termine par **une phrase de motivation locale**.
+Consignes importantes :
+- Réponds en français, de manière structurée, claire et bien lisible.
+- Utilise uniquement des filières, métiers, institutions, formations et ressources disponibles au Togo.
+- Quand tu proposes des formations, commence toujours par suggérer les mini-formations proposées par YVA dans le domaine recommandé. C’est la priorité. Ensuite, tu peux compléter avec d'autres alternatives locales disponibles au Togo (exemple : ANPE Togo, centres de formation, chambres de métiers, dispositifs communaux...).
+- Le ton doit être bienveillant, motivant, simple et adapté aux réalités locales (connexion Internet limitée, zones rurales, contexte économique togolais...).
+- Aucun service étranger, aucune école internationale, aucune plateforme non disponible au Togo. Jamais.
+- Termine par une phrase de motivation courte, percutante et liée à la jeunesse togolaise.
 
 Voici les données du jeune :
 {user_data}
 
-🧠 Structure ta réponse comme ceci :
+Structure ta réponse de la manière suivante :
 
-1. **Profil résumé**
-(3-4 lignes pour décrire la personne)
+1. Profil résumé
+Décris le jeune en 3 ou 4 phrases : qui il ou elle est, ses préférences, ses forces et son contexte.
 
-2. **Suggestion de filière ou métier**
-(Utilise un mot en gras et explique le lien avec ses réponses)
+2. Suggestion de filière ou métier
+Propose un métier ou une filière (avec un mot en gras) qui correspond à son profil, avec une explication claire du lien avec ses réponses.
 
-3. **Pourquoi ce choix**
-(Analyse brève des réponses cohérentes)
+3. Pourquoi ce choix
+Explique de façon simple et directe pourquoi ce choix est pertinent pour lui ou elle, en te basant sur ses réponses et son contexte.
 
-4. **Mini-formations ou services disponibles au Togo**
-(3 suggestions locales, pratiques et accessibles)
+4. Mini-formations ou services disponibles au Togo
+- Commence toujours par les mini-formations proposées par YVA dans le domaine recommandé.
+- Ensuite, propose deux autres alternatives locales accessibles au Togo, comme des centres de formation professionnelle, des dispositifs gouvernementaux (ANPE, chambres de métiers, appui communal, associations locales...).
+- Les suggestions doivent être pratiques, accessibles, réalistes et faisables au Togo, en tenant compte de l’accès au smartphone, à Internet ou aux formations en présentiel.
 
-5. **Message de motivation**
-(1 phrase inspirante en lien avec la jeunesse togolaise)
+5. Message de motivation
+Termine avec une phrase motivante, simple, chaleureuse et ancrée dans le contexte de la jeunesse togolaise.
 
-Sois bref, efficace et **100 % ancré dans le Togo**.
+Important : Sois bref, efficace, motivant et 100 % ancré dans le Togo.
 """
-Tu es YVA, un assistant virtuel pour les jeunes Togolais (12-25 ans). Réponds en français, avec un ton motivant, clair, et structuré. Tiens compte des réalités locales (ex : filières scolaires comme la série D, métiers comme agriculture ou commerce, accès limité à Internet...).
 
-Voici les informations du jeune : {user_data}
 
-Génère une recommandation dans ce format :
 
-1. **Profil du jeune** : (Résumé rapide des données utiles)
-2. **Filière ou métier recommandé(e)** : (avec une explication adaptée)
-3. **Pourquoi ce choix ?** : (arguments liés à ses réponses)
-4. **Mini-formations YVA proposées** : (3 courtes suggestions adaptées à son profil)
-5. **Mot de motivation** : (phrase inspirante, simple et locale)
-
-Évite les phrases longues ou trop générales. Sois chaleureux, accessible, et motivant.        """
 
         client = Mistral(api_key=MISTRAL_API_KEY)
         start_time = time.time()
         response = client.chat.complete(
             model="mistral-large-latest",
-            messages=[{"role": "system", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}]
         )
         elapsed_time = time.time() - start_time
         if elapsed_time > 30:
             return "Erreur : Délai d'attente dépassé."
         return response.choices[0].message.content
+
     except Exception as e:
         return f"Erreur : {str(e)}"
+
 
 @app.route("/api/orientation", methods=["POST"])
 def orientation():
@@ -113,6 +106,7 @@ def orientation():
         return jsonify({"data": [result]})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=7860)
