@@ -94,7 +94,7 @@ yva/
 Pour toute question sur la configuration Google OAuth, consultez la [documentation officielle](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
 \`\`\`
 
-\`\`\`python file="scripts/django_models.py"
+```python file="scripts/django_models.py"
 # models.py - Modèles Django pour YVA
 
 from django.contrib.auth.models import AbstractUser
