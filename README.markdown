@@ -15,24 +15,11 @@ YVA est un assistant virtuel intelligent conçu pour accompagner les jeunes Togo
 - Python 3.9+ et pip
 - PostgreSQL 13+ (non intégré dans le projet, mais instructions d'installation fournies)
 
-### Configuration Frontend
-
-1. **Cloner le projet et installer Next.js**
-```bash
-git clone <repository-url>
-cd yva-frontend
-npm install next
-```
-
-2. **Lancer le serveur de développement**
-```bash
-npm run dev
-```
-
 ### Configuration Backend
 
 1. **Cloner le projet et créer un environnement virtuel**
 ```bash
+git clone <repository-url>
 cd yva-backend
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
@@ -59,6 +46,27 @@ Créer un fichier `.env` dans `yva-backend` avec :
 ```env
 MISTRAL_API_KEY=N3MTpD4hcWN560kPstGLNBxRdMBKyTXf
 ```
+
+4. **Lancer le serveur backend**
+```bash
+cd python_backend
+python app.py
+```
+
+### Configuration Frontend
+
+1. **Cloner le projet et installer Next.js**
+```bash
+cd yva-frontend
+npm install next
+```
+
+2. **Lancer le serveur de développement**
+```bash
+npm run dev
+```
+
+**Note** : Assurez-vous que le serveur backend (`app.py`) est en cours d'exécution avant de lancer le frontend avec `npm run dev`.
 
 ### Installation de PostgreSQL (optionnel, non intégré)
 
